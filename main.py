@@ -1,5 +1,8 @@
+import os
+import firebase_admin
+from firebase_admin import auth, credentials
 
-print(firebase_admin.__version__)
+
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,11 +12,22 @@ import numpy as np
 import tempfile
 import requests
 from typing import Optional, Dict
-import firebase_admin
-from firebase_admin import auth, credentials
 
 # ============ Firebase Init ============
-cred = credentials.Certificate("firebase/service_account_key.json")
+firebase_config = {
+    "type": os.getenv("FIREBASE_type"),
+    "project_id": os.getenv("FIREBASE_project_id"),
+    "private_key_id": os.getenv("FIREBASE_private_key_id"),
+    "private_key": os.getenv("FIREBASE_private_key").replace("\\n", "\n") if os.getenv("FIREBASE_private_key") else None,
+    "client_email": os.getenv("FIREBASE_client_email"),
+    "client_id": os.getenv("FIREBASE_client_id"),
+    "auth_uri": os.getenv("FIREBASE_auth_uri"),
+    "token_uri": os.getenv("FIREBASE_token_uri"),
+    "auth_provider_x509_cert_url": os.getenv("FIREBASE_auth_provider_x509_cert_url"),
+    "client_x509_cert_url": os.getenv("FIREBASE_client_x509_cert_url"),
+}
+
+cred = credentials.Certificate(firebase_config)
 firebase_admin.initialize_app(cred)
 
 # ============ FastAPI App ============
@@ -170,6 +184,7 @@ async def analyze_audio(request: AudioAnalyzeRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Audio processing error: {str(e)}")
 
+# ============ Uvicorn Runner ============
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
